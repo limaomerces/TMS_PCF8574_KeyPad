@@ -1,0 +1,3 @@
+TmsPCF8574_Begin		KEYWORD2
+TmsPCF8574_Main			KEYWORD2
+PCF8574_teclado_ajustado	KEYWORD2
