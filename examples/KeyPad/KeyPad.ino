@@ -11,14 +11,14 @@ void loop() {
     if (PCF8574_teclado_ajustado[i] == 1) {
       Serial.print("Botão ");
       Serial.print(i);
-      Serial.print(" - Repetição");
+      Serial.println(" - Repetição");
     }
   }
   for (byte i = 8; i < 16; i++) {
     if (PCF8574_teclado_ajustado[i] == 1) {
       Serial.print("Botão ");
       Serial.println(i);
-      Serial.print(" - Trava Ativada ");
+      Serial.println(" - Trava Ativada ");
       PCF8574_teclado_ajustado[i] = 0;
     }
   }
