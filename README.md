@@ -3,6 +3,8 @@
 V.1.0.0
 Last Update: 27/04/2022
 
+Destinado para ESP32
+
 //Instruções:
 1. Adicionar "TmsPCF8574_Begin()" no "setup()"
 2. Adicionar "TmsPCF8574_Main()" no "loop()"
