@@ -1,8 +1,14 @@
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//  Nome do Projeto: Esp32_PCF8574_Teclado_Matricial
+//  Objetivo: criar teclado matricial com o pcf8574
+//  Autor: Tiago Mercês Silva
+//  Email: tiago.merces@hotmail.com
 //
-// Produzido por: Tiago Mercês Silva
-// Data: 27/04/2022
+//  Histórico de Atualizações:
+// 			27/04/2022 - 1.0   - Lançamento Inicial
+//          13/10/2020 - 1.1   - Melhoria do debounce e otimização
 // 
-//
+// 
 
 #include <Wire.h>
 #include <TMS_PCF8574_UserSetup.h>
@@ -12,9 +18,6 @@ bool PCF8574_teclado[16];                     // Valores do PCF8574 pós process
 byte PCF8574_VALOR_Read[4];                   // 4 valores de cada loop para criar matrix
 byte PCF8574_VALOR_ReadOld[4];                // Comparador
 bool PCF8574_teclado_ajustado[16];            // Matriz corrigida para interface
-unsigned long PCF8574_debounce_millis[16];    // Millis para debounce
-bool PCF8574_Debounce_pre[16];                // Inicialzador do debounce
-bool PCF8574_DbMillis_Lock[16];               // Evita loop de leitura ao ativar botão//
 int PCF8574_DAR;                              // Referência para ativar o Debounce
 
 
@@ -77,30 +80,37 @@ void PCF8574_KeyBoardAjust(byte i) {		   // Correção dos endereços do teclado
   }
 }
 
-void TmsPCF8574_DeBounce() {								
-  for (byte i = 0; i < 16; i++) {						
-    if (PCF8574_teclado[i] == 1) {
-      if (PCF8574_Debounce_pre[i] == 0) {					
-        PCF8574_DbMillis_Lock[i] = 0;					
-        PCF8574_debounce_millis[i] = millis();
-        PCF8574_Debounce_pre[i] = 1;
-      }
-      if (PCF8574_DbMillis_Lock[i] == 0) {
-        if (millis() - PCF8574_debounce_millis[i] >= PCF8574_DEBOUNCE) {
-          PCF8574_KeyBoardAjust(i);
-          PCF8574_DbMillis_Lock[i] = 1;
-        }
+
+bool PCF8574_teclado_old[16];
+bool PCF8574_DebounceKey[16];
+unsigned long PCF8574_millis[16];
+int DeBounce8574contador;
+bool PCF8574_Debounce_LOCK;
+
+void TmsPCF8574_DeBounce() {
+  byte DeBounce165contador = 0;
+  for (byte i = 0; i < 16; i++) {	
+    if (PCF8574_teclado_old[i] != PCF8574_teclado[i]) {
+      PCF8574_teclado_old[i] = PCF8574_teclado[i];
+      PCF8574_DebounceKey[i] = 1;
+      PCF8574_millis[i] = millis();
+    }
+    else if (PCF8574_DebounceKey[i] == 1) {
+      if (millis() - PCF8574_millis[i] > PCF8574_DEBOUNCE) {
+        PCF8574_teclado_old[i] = PCF8574_teclado[i];
+		PCF8574_KeyBoardAjust(i);
+        //CI74hc165_Teclado[i] = CI74hc165_Slot[i];
+        PCF8574_DebounceKey[i] = 0;
       }
     }
-    else if (PCF8574_Debounce_pre[i] == 1) {
-      PCF8574_Debounce_pre[i] = 0;
-	  PCF8574_KeyBoardAjust(i);
+    else {
+      DeBounce8574contador++;
+      if (DeBounce8574contador == 16) PCF8574_Debounce_LOCK = 1;
     }
   }
 }
 
 void TmsPCF8574_Main() { 
-  PCF8574_DAR = 0;
   for (byte i = 4; i < 8; i++) {
     bitWrite(PCF8574_Write, i, 0);
     PCF8574_Send();
@@ -112,16 +122,13 @@ void TmsPCF8574_Main() {
         for (byte i2 = 0; i2 < 4; i2++) {
           PCF8574_teclado[i2 + (4 * (i - 4))] = !bitRead(PCF8574_VALOR_Read[i - 4], i2);
         }
-      }
-      else {
-        PCF8574_DAR += PCF8574_VALOR_Read[i - 4];
+		PCF8574_Debounce_LOCK = 0;
+		break;
       }
       bitWrite(PCF8574_Write, i, 1);
     }
-    if (PCF8574_DAR != 780) {
-      TmsPCF8574_DeBounce();
-    }
   }
+  if (PCF8574_Debounce_LOCK == 0) TmsPCF8574_DeBounce();
 }
 
 void TmsPCF8574_Begin() {
