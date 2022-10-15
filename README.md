@@ -9,7 +9,7 @@ Autor: Tiago Mercês Silva
 Email: tiago.merces@hotmail.com
 
 
-#Histórico de Atualizações:
+## Histórico de Atualizações:
         27/04/2022 - 1.0   - Lançamento Inicial
         13/10/2020 - 1.1   - Melhoria do debounce e otimização
         14/10/2020 - 1.1.1   - Bug Fix
