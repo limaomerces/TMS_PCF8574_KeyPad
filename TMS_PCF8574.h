@@ -5,10 +5,10 @@
 //  Email: tiago.merces@hotmail.com
 //
 //  Histórico de Atualizações:
-// 			27/04/2022 - 1.0   - Lançamento Inicial
-//          13/10/2020 - 1.1   - Melhoria do debounce e otimização
-// 
-// 
+//       27/04/2022 - 1.0   - Lançamento Inicial
+//       13/10/2020 - 1.1   - Melhoria do debounce e otimização
+//		 14/10/2020 - 1.1.1   - Bug Fix
+//
 
 #include <Wire.h>
 #include <TMS_PCF8574_UserSetup.h>
@@ -27,7 +27,7 @@ void PCF8574_Send() {
   Wire.endTransmission();
 }
 
-void PCF8574_KeyBoardAjust(byte i) {		   // Correção dos endereços do teclado
+void PCF8574_KeyBoardAjust(byte i) {       // Correção dos endereços do teclado
   switch (i) {
     case 0:
       PCF8574_teclado_ajustado[PCF8574_Key0] = PCF8574_teclado[0];
@@ -89,7 +89,7 @@ bool PCF8574_Debounce_LOCK;
 
 void TmsPCF8574_DeBounce() {
   byte DeBounce165contador = 0;
-  for (byte i = 0; i < 16; i++) {	
+  for (byte i = 0; i < 16; i++) {
     if (PCF8574_teclado_old[i] != PCF8574_teclado[i]) {
       PCF8574_teclado_old[i] = PCF8574_teclado[i];
       PCF8574_DebounceKey[i] = 1;
@@ -98,19 +98,38 @@ void TmsPCF8574_DeBounce() {
     else if (PCF8574_DebounceKey[i] == 1) {
       if (millis() - PCF8574_millis[i] > PCF8574_DEBOUNCE) {
         PCF8574_teclado_old[i] = PCF8574_teclado[i];
-		PCF8574_KeyBoardAjust(i);
+        PCF8574_KeyBoardAjust(i);
         //CI74hc165_Teclado[i] = CI74hc165_Slot[i];
         PCF8574_DebounceKey[i] = 0;
       }
     }
     else {
       DeBounce8574contador++;
-      if (DeBounce8574contador == 16) PCF8574_Debounce_LOCK = 1;
+      if (DeBounce8574contador == 16) {
+        PCF8574_Debounce_LOCK = 1;
+      }
     }
   }
 }
 
-void TmsPCF8574_Main() { 
+#ifdef DEBUG_PCF8574
+bool PCF8574_teclado_ajustado_Debug[16];
+void TmsPCF8574_Debug_KeyBoard() {
+  for (byte i = 0; i < 16; i++) {
+    if (PCF8574_teclado_ajustado_Debug[i] != PCF8574_teclado_ajustado[i]) {
+      PCF8574_teclado_ajustado_Debug[i] = PCF8574_teclado_ajustado[i];
+      Serial.print(i);
+      Serial.print(" - ");
+      Serial.println(PCF8574_teclado_ajustado[i]);
+    }
+  }
+}
+#endif
+
+void TmsPCF8574_Main() {
+#ifdef DEBUG_PCF8574
+  TmsPCF8574_Debug_KeyBoard();
+#endif
   for (byte i = 4; i < 8; i++) {
     bitWrite(PCF8574_Write, i, 0);
     PCF8574_Send();
@@ -122,8 +141,10 @@ void TmsPCF8574_Main() {
         for (byte i2 = 0; i2 < 4; i2++) {
           PCF8574_teclado[i2 + (4 * (i - 4))] = !bitRead(PCF8574_VALOR_Read[i - 4], i2);
         }
-		PCF8574_Debounce_LOCK = 0;
-		break;
+        PCF8574_Debounce_LOCK = 0;
+		bitWrite(PCF8574_Write, i, 1);		// Reseta o ciclo
+        PCF8574_Send();						// Reseta o ciclo
+        break;
       }
       bitWrite(PCF8574_Write, i, 1);
     }
